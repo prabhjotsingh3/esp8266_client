@@ -3,7 +3,7 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <arpa/inet.h>
-
+#include <string.h>
 
 const char A[5] = {0x7e,0x11,0x11,0x11,0x7e};
 const char B[5] = {0x7f,0x49,0x49,0x49,0x36};
@@ -59,6 +59,20 @@ int main(int argc, char *argv[]) {
 
 	int i;
 	char *str = "PRABHJOT";
+	char svr_ip_addr[15];
+	unsigned int svr_port = 0;
+
+
+	if(argc < 3) {
+		printf("Usage : ./esp8266_client <server-ip-address> <server-port-no\n");
+		return 0;
+	}
+
+	
+	strcpy(svr_ip_addr,argv[1]);
+	sscanf(argv[2],"%u",&svr_port);
+
+	printf("Server IP Address : %s\tPort No. : %d\n",svr_ip_addr,svr_port);
 
 	for( i = 0; str[i] != '\0'; i++) {
 		sendChar(str[i],blue);
