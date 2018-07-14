@@ -4,6 +4,9 @@
 #include <sys/types.h>
 #include <arpa/inet.h>
 #include <string.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <linux/in.h>
 
 const char A[5] = {0x7e,0x11,0x11,0x11,0x7e};
 const char B[5] = {0x7f,0x49,0x49,0x49,0x36};
@@ -41,42 +44,70 @@ enum color {
 	blue
 };
 
-int sendChar(unsigned char ch, enum color cl) {
+int sendChar(int sock_fd, unsigned char ch, enum color cl) {
 	char buff[15] = {0};
 	int i;
 
 	for(i = 0; i < 5; i++) {
-		buff[cl + i*3] = alphabets[ch-0x40][i];
+		buff[cl + i*3] = alphabets[ch-0x41][i];
 	}
-
+#if 0
 	for(i = 0; i < 15; i++) {
 		printf("%x\t",buff[i]);
 	}
 	printf("\n");
+#endif
+	return write(sock_fd,buff,sizeof(buff));
 }
 
 int main(int argc, char *argv[]) {
 
-	int i;
+	int i,sock_fd;
 	char *str = "PRABHJOT";
 	char svr_ip_addr[15];
 	unsigned int svr_port = 0;
-
+	struct sockaddr_in svr_addr;
 
 	if(argc < 3) {
 		printf("Usage : ./esp8266_client <server-ip-address> <server-port-no\n");
 		return 0;
 	}
 
-	
 	strcpy(svr_ip_addr,argv[1]);
 	sscanf(argv[2],"%u",&svr_port);
 
 	printf("Server IP Address : %s\tPort No. : %d\n",svr_ip_addr,svr_port);
 
+
+	sock_fd = socket(AF_INET, SOCK_STREAM, 0);
+	if(sock_fd == -1) {
+		perror("socket() ");
+		return -1;
+	}
+	
+	memset(&svr_addr, '0', sizeof(svr_addr));
+       	svr_addr.sin_family = AF_INET;
+	svr_addr.sin_port = htons(svr_port);
+	if(inet_aton(svr_ip_addr,&svr_addr.sin_addr) == 0) {
+		perror("inet_aton() ");
+		close(sock_fd);
+		return -1;
+	}
+
+	if(connect(sock_fd,(const struct sockaddr *)&svr_addr,sizeof(svr_addr)) == -1) {
+		perror("connect() ");
+		close(sock_fd);
+		return -1;
+	}
+
+	printf("Connected to ESP8266 server successfully..\n");
+	
 	for( i = 0; str[i] != '\0'; i++) {
-		sendChar(str[i],blue);
+		sendChar(sock_fd,str[i],blue);
+		sleep(1);
 	}	
+
+	close(sock_fd);
 
 	return 0;
 }
