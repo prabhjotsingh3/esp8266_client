@@ -11,7 +11,7 @@
 const char A[5] = {0x7e,0x11,0x11,0x11,0x7e};
 const char B[5] = {0x7f,0x49,0x49,0x49,0x36};
 const char C[5] = {0x3e,0x41,0x41,0x41,0x22};
-const char D[5] =  {0x7f,0x41,0x41,0x22,0x1c};
+const char D[5] = {0x7f,0x41,0x41,0x22,0x1c};
 const char E[5] = {0x7f,0x49,0x49,0x49,0x41};
 const char F[5] = {0x7f,0x09,0x09,0x01,0x01};
 const char G[5] = {0x3e,0x41,0x51,0x51,0x72};
@@ -23,7 +23,7 @@ const char L[5] = {0x7f,0x40,0x40,0x40,0x40};
 const char M[5] = {0x7f,0x02,0x0C,0x02,0x7f};
 const char N[5] = {0x7f,0x04,0x08,0x10,0x7f};
 const char O[5] = {0x3e,0x41,0x41,0x41,0x3e};
-const char P[5] = {0x7f,0x9,0x09,0x09,0x06};
+const char P[5] = {0x7f,0x09,0x09,0x09,0x06};
 const char Q[5] = {0x3e,0x41,0x51,0x21,0x5e};
 const char R[5] = {0x7f,0x09,0x19,0x29,0x46};
 const char S[5] = {0x46,0x49,0x49,0x49,0x31};
@@ -44,12 +44,20 @@ enum color {
 	blue
 };
 
+typedef struct {
+	char str[20];
+	int color;
+}display_str;
+
+display_str my_str[3] = { { "BHAINS", red } , { "KI", blue } , { "A ANKH", green } };
+
 int sendChar(int sock_fd, unsigned char ch, enum color cl) {
 	char buff[15] = {0};
 	int i;
-
-	for(i = 0; i < 5; i++) {
-		buff[cl + i*3] = alphabets[ch-0x41][i];
+	if(ch != ' ') {
+		for(i = 0; i < 5; i++) {
+			buff[cl + i*3] = alphabets[ch-0x41][i];
+		}
 	}
 #if 0
 	for(i = 0; i < 15; i++) {
@@ -62,8 +70,7 @@ int sendChar(int sock_fd, unsigned char ch, enum color cl) {
 
 int main(int argc, char *argv[]) {
 
-	int i,sock_fd;
-	char *str = "PRABHJOT";
+	int i, j, sock_fd;
 	char svr_ip_addr[15];
 	unsigned int svr_port = 0;
 	struct sockaddr_in svr_addr;
@@ -77,7 +84,6 @@ int main(int argc, char *argv[]) {
 	sscanf(argv[2],"%u",&svr_port);
 
 	printf("Server IP Address : %s\tPort No. : %d\n",svr_ip_addr,svr_port);
-
 
 	sock_fd = socket(AF_INET, SOCK_STREAM, 0);
 	if(sock_fd == -1) {
@@ -102,9 +108,14 @@ int main(int argc, char *argv[]) {
 
 	printf("Connected to ESP8266 server successfully..\n");
 	
-	for( i = 0; str[i] != '\0'; i++) {
-		sendChar(sock_fd,str[i],blue);
-		sleep(1);
+	for( j = 0; j < sizeof(my_str)/sizeof(display_str); j++) {
+		for( i = 0; my_str[j].str[i] != '\0'; i++) {
+			sendChar(sock_fd,my_str[j].str[i],my_str[j].color);
+			if(my_str[j].str[i] == ' ')
+				usleep(750);
+			else
+				usleep(750000);
+		}
 	}	
 
 	close(sock_fd);
